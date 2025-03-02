@@ -6,8 +6,8 @@ from sqlalchemy import pool
 from alembic import context
 
 # Import your database and all models here to ensure they're known to SQLAlchemy
-from zdatabase import Base
-from zmodelosdb import *  # Import all models here
+from database import Base
+from modelosdb import *  # Import all models here
 
 
 # this is the Alembic Config object, which provides
