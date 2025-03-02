@@ -22,6 +22,7 @@ class UserLogin(BaseModel):
     password: str
 
 
+# Register endpoint - does not require authentication
 @router.post("/register/")
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.username == user.username).first()

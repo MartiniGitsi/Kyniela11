@@ -6,11 +6,42 @@ from pydantic import BaseModel
 from database import get_db  # nuevo
 from modelosdb import Task
 
-from backend.routes import auth  # nuevo para usuarios
-
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI()
+from backend.routes import auth, tasks  # para personalizacion de usuarios
+
+from fastapi.security import OAuth2PasswordBearer
+from backend.auth import get_current_user
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+
+app = FastAPI(
+    title="Your API Title",
+    description="Description of the API",
+    version="1.0.0",
+)
+
+
+# Add the Bearer JWT authentication security scheme to OpenAPI
+@app.on_event("startup")
+async def add_bearer_security():
+    openapi_schema = app.openapi()
+
+    # Add the Bearer JWT security scheme to OpenAPI components
+    openapi_schema["components"]["securitySchemes"] = {
+        "bearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"}
+    }
+
+    # Assign this security scheme to all endpoints
+    for path in openapi_schema["paths"].values():
+        if isinstance(path, dict):
+            for method in path.values():
+                method["security"] = [{"bearerAuth": []}]
+
+    # Update FastAPI app's OpenAPI schema with the modified one
+    app.openapi_schema = openapi_schema
+
 
 # Indicar que recibirá peticiones del origen del frontend
 app.add_middleware(
@@ -23,29 +54,7 @@ app.add_middleware(
 
 # Include the authentication router
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
-
-
-# Pydantic model to validate request data
-class TaskCreate(BaseModel):
-    title: str
-
-
-# Get all tasks
-@app.get("/tasks")
-def read_tasks(db: Session = Depends(get_db)):  # Dependency Injection
-    return db.query(Task).all()
-
-
-# Create a new task
-@app.post("/tasks")
-def create_task(
-    task: TaskCreate, db: Session = Depends(get_db)
-):  # Dependency Injection
-    new_task = Task(title=task.title)  # Access the `title` field correctly
-    db.add(new_task)
-    db.commit()
-    db.refresh(new_task)
-    return new_task
+app.include_router(tasks.router, prefix="/tasks", tags=["tasks"])
 
 
 # Mark task as completed
