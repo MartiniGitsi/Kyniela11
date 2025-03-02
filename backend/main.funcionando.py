@@ -6,8 +6,6 @@ from pydantic import BaseModel
 from database import get_db  # nuevo
 from modelosdb import Task
 
-from backend.routes import auth  # nuevo para usuarios
-
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -20,9 +18,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Include the authentication router
-app.include_router(auth.router, prefix="/auth", tags=["auth"])
 
 
 # Pydantic model to validate request data
