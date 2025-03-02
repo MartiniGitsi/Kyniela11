@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Form
 from sqlalchemy.orm import Session
 from datetime import timedelta
 
@@ -40,6 +40,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     return {"message": "User registered successfully"}
 
 
+"""
 @router.post("/login/")
 def login(user: UserLogin, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.username == user.username).first()
@@ -50,4 +51,19 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
         data={"sub": db_user.username}, expires_delta=timedelta(minutes=30)
     )
 
+    return {"access_token": access_token, "token_type": "bearer"}
+"""
+
+
+@router.post("/login/")
+def login(
+    username: str = Form(...),  # Make sure it uses Form
+    password: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.username == username).first()
+    if not user or not verify_password(password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Invalid credentials")
+
+    access_token = create_access_token({"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
